@@ -1,0 +1,166 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+#include"nested_sampler.h"
+#include"priors.h"
+#include"nested.h"
+
+#ifdef PARALLEL
+	#include "mpi.h"
+#endif
+
+
+#define NUM_DIM 2
+
+int myid = 0;
+double glog_z;
+
+
+void log_lik(double* cube,unsigned num_dim, unsigned num_par, double *lnew)
+{
+	/* n-D Gaussian Distribution with mu=0 and sigma=1*/
+	double priors[NUM_DIM][2];
+	int prior_type[NUM_DIM];
+	double para[NUM_DIM];
+	double val;
+	double loglik=0;
+	unsigned i;
+	
+	prior_type[0] = 0;  priors[0][0] = -15.;	priors[0][1] = 15.;
+	prior_type[1] = 0;  priors[1][0] = -15.;	priors[1][1] = 15.;
+
+	for(i=0;i<num_dim;++i)
+	{
+		/*printf("%f\t",cube[i]);*/
+		val=apply_prior(prior_type[i], cube[i], priors[i]);
+		cube[i]=para[i]=val;
+	}
+	/*printf("\n");*/
+	
+	for(i=0;i<num_dim;++i)
+	{
+		/*printf("%f\t",para[i]);*/
+		loglik+=(0.-para[i])*(0.-para[i]);
+	}
+	/*printf("\n");*/
+	
+	*lnew=-0.5*loglik;
+	
+}
+
+void log_like(double *cube, int *ndim, int *npars, double *lnew)
+{
+	/* n-D Gaussian Distribution with mu=0 and sigma=1*/
+	double priors[NUM_DIM][2];
+	int prior_type[NUM_DIM];
+	double para[NUM_DIM];
+	double val;
+	double loglik=0;
+	unsigned i;
+	
+	prior_type[0] = 0;  priors[0][0] = -15.;	priors[0][1] = 15.;
+	prior_type[1] = 0;  priors[1][0] = -15.;	priors[1][1] = 15.;
+
+	for(i=0;i<*ndim;++i)
+	{
+		val=apply_prior(prior_type[i], cube[i], priors[i]);
+		cube[i]=para[i]=val;
+	}
+	
+	for(i=0;i<*ndim;++i)
+	{
+		loglik+=(0.-para[i])*(0.-para[i]);
+	}
+	
+	*lnew=-0.5*loglik;
+}
+
+
+
+void dumper(int *nSamples, int *nlive, int *nPar, double **physLive, double **posterior, double *paramConstr, double *maxLogLike, double *log_z)
+{
+	glog_z = *log_z;
+}
+
+
+void run_multi_nest();
+
+int main(int argc, char *argv[])
+{
+	unsigned nlive=1000;
+	unsigned ndim=NUM_DIM;
+	unsigned npar=NUM_DIM;
+	double ztol=1;
+	unsigned update_int=10;
+	unsigned long seed=6546;
+	char* root="chains/test_";
+	int feedback=0;
+	int resume=0;
+	
+#ifdef PARALLEL
+ 	MPI_Init(&argc,&argv);
+	MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+#endif
+	printf("\nRunning Maxillaria!\n\n");
+	
+	/*run_multi_nest();*/
+	
+	run_nested_sampler(nlive,ndim,npar,ztol,update_int,seed,root,feedback,resume,&log_lik);
+	
+#ifdef PARALLEL
+	MPI_Finalize();
+#endif
+
+	return EXIT_SUCCESS;
+}
+
+void run_multi_nest()
+{
+	int mmodal;		
+	int ceff;
+	int nlive;
+	double efr;
+	double tol;
+	int updInt;
+	double Ztol;
+	int maxModes;
+	char* root="./chains/test_";
+	int seed;
+	int fb;
+	int resume;
+	int context;
+	int ndims;
+	int nPar;
+	int nClsPar;
+	int pWrap[NUM_DIM];
+	int i;
+
+	
+	/* for nested sampling */
+	mmodal = 0;		/* do mode separation?*/	
+	ceff = 0;		/* run in constant efficiency mode?*/
+	nlive = 1000;		/* number of live points*/
+	efr = 0.1;		/* set the required efficiency*/
+	tol = 1;		/* tol, defines the stopping criteria*/
+	updInt = 1000;		/* after how many iterations feedback is required & the output files should be updated*/
+	Ztol = -1.e90;		/* all the modes with logZ < Ztol are ignored*/
+	maxModes = 100;		/* expected max no. of modes (used only for memory allocation)*/
+	seed = -1;		/* random no. generator seed, if < 0 then take the seed from system clock*/
+	fb = 0;			/* need feedback on standard output?*/
+	resume = 0;		/* resume from a previous job?*/
+	context = 0;		/* not required by MultiNest, any additional information user wants to pass*/
+
+	ndims=NUM_DIM;
+	nPar=NUM_DIM;
+	nClsPar = 0;
+	for(i = 0; i < nPar; i++ )
+	{
+		pWrap[i] = 0;
+	}
+	
+	printf("\nPerforming Nested Sampling using MultiNest\n\n");
+	
+	run_multinest_sampler(mmodal, ceff, nlive, tol, efr, ndims, nPar, nClsPar, 
+		maxModes, updInt, Ztol, root, seed, pWrap, fb, resume, log_like, dumper);
+	
+}
