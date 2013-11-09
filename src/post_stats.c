@@ -155,7 +155,7 @@ void write_stats_file(live_point* psamps,unsigned long num_post_samps,live_point
 	outfile=fopen(stats_file_name,"w");	
 	if(outfile!=NULL)
 	{
-		fprintf(outfile,"Number of iterates               = %d\n",num_post_samps);
+		fprintf(outfile,"Number of iterates               = %ld\n",num_post_samps);
 		fprintf(outfile,"Evidence: log(Z)                 = %g +/- %g\n",logz,dlogz);
 		fprintf(outfile,"Information: H                   = %g nats(= %g bits)\n",H,H/log(2.));
 		fprintf(outfile,"\n\nPosterior Statistics\n");

@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#include"nested_sampler.h"
+#include"maxillaria.h"
 #include"priors.h"
 
 #define NUM_DIM 2
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	unsigned update_int=100;
 	unsigned long seed=12457;
 	char* root="chains/test";
-	int feedback=0;
+	int feedback=100;
 	int resume=0;
 	
 	run_maxillaria_nested_sampler(nlive,ndim,npar,ztol,update_int,seed,root,feedback,resume,&log_lik,&my_dumper);

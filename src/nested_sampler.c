@@ -1,19 +1,20 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<assert.h>
-#include<float.h>
-#include<math.h>
-#include<assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <float.h>
+#include <math.h>
+#include <assert.h>
 
-#include"live_point.h"
-#include"nested_sampler.h"
-#include"nested_diagnostic.h"
-#include"mt19937.h"
-#include"utils.h"
-#include"post_stats.h"
-#include"post_equal_weights.h"
-#include"explore.h"
+#include "live_point.h"
+#include "maxillaria.h"
+#include "nested_sampler.h"
+#include "nested_diagnostic.h"
+#include "mt19937.h"
+#include "utils.h"
+#include "post_stats.h"
+#include "post_equal_weights.h"
+#include "explore.h"
 
 double log_add(double x,double y)
 {
@@ -47,7 +48,7 @@ void run_maxillaria_nested_sampler(unsigned num_live,unsigned num_dim,unsigned n
 	unsigned long rand_length=4;
 	nested_diagnostic_data* nested_diag_data;
 	int run_sampler=1;
-	int perform_sampling=1;
+	/*int perform_sampling=1;*/
 	double log_lik_new;
 	double log_width;
 	double log_z_new;
@@ -63,19 +64,18 @@ void run_maxillaria_nested_sampler(unsigned num_live,unsigned num_dim,unsigned n
 	
 	assert(update_interval>0);
 	
+	
 	printf("\n-------------------------------------------------\n");
 	printf("             Sree's Nested Sampler\n");
-	printf("                Version 0.1c\n");
-	printf("          Last Modified: December 2012\n");
+	printf("                Version %d.%d\n",MAXILLARIA_VERSION_MAJOR,MAXILLARIA_VERSION_MINOR);
 	printf("   Sreekumar Thaithara Balan (tbs1980@gmail.com)\n");
-	printf("         University College London, UK.\n");
 	printf("-------------------------------------------------\n");
 
 	
 	/* allocate memroy for random number generator*/
 	rand=(ellipsis_mt19937_rng*)malloc(sizeof(ellipsis_mt19937_rng));
 	init_by_array(rand,rand_init, rand_length);
-	
+
 	/* assign the file names */
 	strcpy(diag_file_name,prefix_to_files);
 	strcat(diag_file_name,".diag.txt");
@@ -89,7 +89,9 @@ void run_maxillaria_nested_sampler(unsigned num_live,unsigned num_dim,unsigned n
 	strcat(extract_file_name,".extract.txt");
 	strcpy(stats_file_name,prefix_to_files);
 	strcat(stats_file_name,".stats.txt");
+
 	
+
 	/* are we resuming from pervious state? */
 	if(resume)
 	{
@@ -145,7 +147,15 @@ void run_maxillaria_nested_sampler(unsigned num_live,unsigned num_dim,unsigned n
 	if(run_sampler)
 	{
 		ext_out_file=fopen(extract_file_name,"w");
-		if(ext_out_file!=NULL) fclose(ext_out_file);
+		if(ext_out_file!=NULL)
+		{
+			fclose(ext_out_file);
+		}
+		else
+		{
+			printf("Cannot open extract file for writing. Please check the path\n");
+			return;
+		}
 		
 		/* open extract file */
 		ext_out_file=fopen(extract_file_name,"a");
@@ -220,7 +230,7 @@ void run_maxillaria_nested_sampler(unsigned num_live,unsigned num_dim,unsigned n
 				
 				if(feedback)
 				{
-					printf("\nNumber of iterates    = %ld\n",iter+1);
+					printf("\nNumber of iterates     = %ld\n",iter+1);
 					printf("Evidence,log(Z)        = %g +- %g\n",log_z,sqrt(info_h/(double)num_live));
 					printf("Dlog(Z)                = %g\n",delta_log_z);
 				}
